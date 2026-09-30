@@ -1,0 +1,265 @@
+{
+  "name": "Mali Travels Support & Booking",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hi there! 👋\nMy name is Amara, your Mali Travels assistant. How can I help you today?",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -352,
+        -208
+      ],
+      "id": "1fa4d907-10dd-42a9-b8ce-f85aea3805fe",
+      "name": "When chat message received",
+      "webhookId": "5f87a222-704c-4b04-aee7-a9b41e943788"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -656,
+        96
+      ],
+      "id": "c911d27c-87c6-475d-959a-35ee19597342",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SfjAXBWSETv1gmlQ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        -464,
+        80
+      ],
+      "id": "88a26d35-a5b0-42ba-9d5b-f1c0f660ec48",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "CexDFiKHybXJPKwU",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this tool to look up information about Mali Travels' packages, pricing, bookings, and policies.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        -48
+      ],
+      "id": "f279ea87-a773-4d18-bc15-71817fd44e21",
+      "name": "Postgres PGVector Store",
+      "credentials": {
+        "postgres": {
+          "id": "CexDFiKHybXJPKwU",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        448,
+        128
+      ],
+      "id": "49c67403-18db-42e5-a3de-0fce7d5aca91",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "SfjAXBWSETv1gmlQ",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to submit a booking request to the Mali Travels team.",
+        "sendTo": "sociallybluedesign@gmail.com",
+        "subject": "New booking request - Mali Travels",
+        "message": "={{ \"Customer Name: \" + $fromAI('customer_name', 'The customer full name', 'string') + \"<br><br>Email: \" + $fromAI('customer_email', 'The customer email address', 'string') + \"<br>Phone: \" + $fromAI('customer_phone', 'The customer phone number', 'string') + \"<br><br>Package: \" + $fromAI('package', 'The travel package requested', 'string') + \"<br>Travel Dates: \" + $fromAI('travel_dates', 'The requested travel dates', 'string') + \"<br>Travelers: \" + $fromAI('travelers', 'Number of travelers', 'string') + \"<br><br>Notes: \" + $fromAI('notes', 'Any additional notes or preferences the customer mentioned, or the text None provided if there are none', 'string') + \"<br><br>Requested action: Please reserve the above and send confirmation and payment instructions to the customer.\" }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        -48,
+        80
+      ],
+      "id": "bb8c7cb0-8c30-413d-84a8-683ef7b3c54d",
+      "name": "Book Trip",
+      "webhookId": "d46e0761-90d5-475e-9585-421eb2ac7b61",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "fDzEV28dUGTRJuwh",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to notify the Mali Travels team when a customer wants to speak with a real person. Include the customer's name, contact details, and a brief note on what they need help with.",
+        "sendTo": "sociallybluedesign@gmail.com",
+        "subject": "={{ $fromAI('Subject', 'A short subject line summarizing the customer request, e.g. \"Support request: [brief topic]\"', 'string') }}",
+        "message": "={{ \"Customer Name: \" + $fromAI('customer_name', 'The customer full name', 'string') + \"<br><br>Email or Phone: \" + $fromAI('contact_info', 'The customer email or phone number', 'string') + \"<br><br>Reason for request: \" + $fromAI('reason', 'A brief description of what the customer needs help with', 'string') + \"<br><br>Requested action: Please reach out to this customer directly to assist with their request.\" }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        96,
+        80
+      ],
+      "id": "6bfb72aa-29fe-4577-9265-75453ebafa83",
+      "name": "Human Support",
+      "webhookId": "dba471e7-615e-4191-b4f5-0981abdf7374",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "fDzEV28dUGTRJuwh",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "*Role*\n\nYour name is Amara, a customer support agent for Mali Travels, a Kenyan safari and travel company.\n\nYou are responsible for answering questions about Mali Travels' packages, bookings, and policies using the knowledge base system.\n\nPlease ensure your communication style is friendly, warm, and to the point.\n\n**Tools**\n\nWhen a customer wants to book a trip, follow these steps:\n\nCollect essential details: customer name, email address, phone number, package of interest, preferred travel dates, and number of travelers.\n\nLet the customer know their booking request has been submitted to the Mali Travels team and they will receive a confirmation shortly.\n\nWhen a customer wants to speak with a real person:\n\nGet their name, email or phone number, and a brief note on what they need help with.\n\nUse the Human Support tool to send their details.\n\nTell them their request was submitted and staff will contact them soon."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -128,
+        -208
+      ],
+      "id": "d937426e-6560-4e7d-bea8-de9d36a63b7e",
+      "name": "Amara AI Agent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Amara AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Amara AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Amara AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres PGVector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Amara AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Book Trip": {
+      "ai_tool": [
+        [
+          {
+            "node": "Amara AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Support": {
+      "ai_tool": [
+        [
+          {
+            "node": "Amara AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "86209ef1-15c2-4014-9fd3-785d5e682bb0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "43c4fc3d38bee2f7ed1c03c16931b1b38475f253369e65275146b11f3f76d660"
+  },
+  "nodeGroups": [],
+  "id": "07uocLQMhreSALZ4",
+  "tags": []
+}
