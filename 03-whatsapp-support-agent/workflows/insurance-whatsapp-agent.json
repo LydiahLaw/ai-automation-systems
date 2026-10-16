@@ -12,8 +12,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -880,
-        -496
+        -1168,
+        -608
       ],
       "id": "2f5d4ef5-6691-48df-bfdb-eb08ac41905f",
       "name": "AI Agent"
@@ -33,8 +33,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -1056,
-        -192
+        -1168,
+        -336
       ],
       "id": "a0a3b92b-d2b2-4c0d-8838-ea513dd72365",
       "name": "OpenAI Chat Model",
@@ -55,8 +55,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.4,
       "position": [
-        -896,
-        -224
+        -1040,
+        -320
       ],
       "id": "64bf3f2a-0140-420c-825c-4e89a74dd705",
       "name": "Postgres Chat Memory",
@@ -84,8 +84,8 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
       "typeVersion": 1.3,
       "position": [
-        -640,
-        -224
+        -784,
+        -336
       ],
       "id": "0765b172-6d26-4483-8805-bc892b1faccf",
       "name": "texas_insurance_kb",
@@ -103,8 +103,8 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
       "typeVersion": 1.2,
       "position": [
-        -464,
-        -112
+        -672,
+        -192
       ],
       "id": "28070bc3-e07f-49b9-b033-22364cbae227",
       "name": "Embeddings OpenAI",
@@ -127,8 +127,8 @@
       "type": "n8n-nodes-base.gmailTool",
       "typeVersion": 2.2,
       "position": [
-        -752,
-        -208
+        -912,
+        -336
       ],
       "id": "7f8ed6e8-1818-4b97-bd04-30b3a382b0d9",
       "name": "Request Agent Callback",
@@ -149,8 +149,8 @@
       "type": "n8n-nodes-base.whatsAppTrigger",
       "typeVersion": 1,
       "position": [
-        -544,
-        -528
+        -832,
+        -640
       ],
       "id": "49999bf3-ee5d-4430-a144-5ba1244e76a4",
       "name": "WhatsApp Trigger",
@@ -221,8 +221,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        -384,
-        -528
+        -672,
+        -640
       ],
       "id": "e046080b-579c-4e45-9c6a-3bb9d634b3e8",
       "name": "Switch"
@@ -256,8 +256,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        32,
-        -176
+        -80,
+        -336
       ],
       "id": "4dd07db5-34ad-42d9-8062-ebb648a27066",
       "name": "Get User's Message"
@@ -273,8 +273,8 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        -320,
-        -304
+        -480,
+        -400
       ],
       "id": "de9315ba-a680-4366-a6f7-de83b690e061",
       "name": "Reply To User",
@@ -294,8 +294,8 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        -192,
-        -544
+        -480,
+        -656
       ],
       "id": "841821c0-0bc8-4b5e-a280-69414e1a1710",
       "name": "Get Audio URL",
@@ -322,8 +322,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        -16,
-        -544
+        -304,
+        -656
       ],
       "id": "0672eaf2-28f7-4560-8701-60af69e19b13",
       "name": "Download Audio",
@@ -336,45 +336,12 @@
     },
     {
       "parameters": {
-        "resource": "audio",
-        "operation": "analyze",
-        "modelId": {
-          "__rl": true,
-          "value": "models/gemini-3.8-flash",
-          "mode": "list",
-          "cachedResultName": "models/gemini-3.8-flash"
-        },
-        "text": "Transcribe this voice message exactly as spoken. Return only the transcript, nothing else.",
-        "inputType": "binary",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.googleGemini",
-      "typeVersion": 1.2,
-      "position": [
-        144,
-        -544
-      ],
-      "id": "082c6ca0-237a-4692-908d-3f3c81271e63",
-      "name": "Transcribe Audio",
-      "retryOnFail": true,
-      "waitBetweenTries": 5000,
-      "maxTries": 5,
-      "credentials": {
-        "googlePalmApi": {
-          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
-          "name": "Gemini account"
-        }
-      },
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
         "assignments": {
           "assignments": [
             {
               "id": "728153ad-267f-445a-8bbb-cbea95f7e001",
               "name": "message_text",
-              "value": "={{ $json.content.parts[0].text }}",
+              "value": "={{ $json.text }}",
               "type": "string"
             },
             {
@@ -396,8 +363,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        368,
-        -544
+        192,
+        -256
       ],
       "id": "9ff403c6-0e68-48e4-ae23-15ca11908c7c",
       "name": "Get Audio Message"
@@ -413,8 +380,8 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        416,
-        -400
+        192,
+        -640
       ],
       "id": "c88ab056-9c5a-48c4-8c5e-e60eb1a7c7c4",
       "name": "Voice Fallback Reply",
@@ -424,6 +391,31 @@
           "name": "WhatsApp account"
         }
       }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -80,
+        -656
+      ],
+      "id": "3a33a318-5cbb-4e80-91ca-96cf170a018f",
+      "name": "Transcribe Audio OpenAI",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "OpenAI account"
+        }
+      },
+      "onError": "continueErrorOutput"
     }
   ],
   "pinData": {},
@@ -549,25 +541,7 @@
       "main": [
         [
           {
-            "node": "Transcribe Audio",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Transcribe Audio": {
-      "main": [
-        [
-          {
-            "node": "Get Audio Message",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Voice Fallback Reply",
+            "node": "Transcribe Audio OpenAI",
             "type": "main",
             "index": 0
           }
@@ -579,6 +553,24 @@
         [
           {
             "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Audio OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Get Audio Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Voice Fallback Reply",
             "type": "main",
             "index": 0
           }
