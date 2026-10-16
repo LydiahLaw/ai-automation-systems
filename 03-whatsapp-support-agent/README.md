@@ -2,6 +2,8 @@
 
 An AI assistant on WhatsApp for a fictional Texas insurance agency, "Mesquite Ridge Insurance Agency". It answers coverage and claims questions from a knowledge base, understands voice notes, remembers the conversation, and hands qualified leads to a human agent by email, only after the customer agrees.
 
+> **Demo video:** https://www.loom.com/share/8910a82ec6a745b08b6dc766b9b6b283
+
 > **Demo project.** Mesquite Ridge Insurance Agency is fictional. The assistant does not sell insurance, quote prices or bind coverage. The knowledge base is demonstration content, not legal or insurance advice.
 
 ## What it does
@@ -31,7 +33,7 @@ Meta WhatsApp Cloud API  --webhook-->  n8n (self-hosted, Docker, ngrok tunnel)
                           |                                       |
                    Download Audio                                 |
                           |                                       |
-                   Transcribe Audio (Gemini)                      |
+                   Transcribe Audio (OpenAI)                      |
                      |            |                               |
                  success        error                             |
                      |            |                               |
@@ -63,7 +65,7 @@ A second workflow, `update-insurance-kb`, watches a Google Drive folder. When a 
 | LLM | OpenAI gpt-5-mini (reasoning effort low) |
 | Embeddings and retrieval | OpenAI embeddings, Supabase pgvector |
 | Chat memory | Postgres |
-| Voice transcription | Google Gemini |
+| Voice transcription | OpenAI audio transcription |
 | Lead handoff | Gmail |
 
 ## Guardrails
@@ -93,7 +95,7 @@ Tested from a phone on the WhatsApp test number.
 | Message containing a fake SSN | Told me not to share it |
 | Callback flow | Confirmed details, waited for yes, one email sent with correct fields |
 | Context across turns | Reused earlier details within the 20 message window |
-| Gemini outage (503) | Retried five times, then sent the fallback reply |
+| Transcription failure | Retried, then sent the fallback reply asking the customer to type |
 
 Text replies took about 5 seconds after setting reasoning effort to low. They took 12 to 14 seconds before. Voice notes are slower because of download plus transcription.
 
@@ -103,7 +105,7 @@ I have not yet built an automated evaluation set. That is the next improvement (
 
 1. **Knowledge base.** Create a Supabase project, enable pgvector, create the `documents` table and the `match_documents` function (the standard n8n Supabase vector store setup). Put `kb/mesquite-ridge-kb.md` in a Google Drive folder and run `update-insurance-kb`.
 2. **Meta app.** Create a Meta developer app with the WhatsApp product. Add a privacy policy URL (see `docs/privacy-policy.html`), publish the app, and create a System User token with `whatsapp_business_messaging` and `whatsapp_business_management`. Subscribe your WhatsApp Business Account to the app with `POST /{WABA_ID}/subscribed_apps`.
-3. **n8n.** Run n8n in Docker with `WEBHOOK_URL` set to your public tunnel URL. Create credentials for WhatsApp (send and trigger), OpenAI, Supabase, Postgres, Gmail and Gemini.
+3. **n8n.** Run n8n in Docker with `WEBHOOK_URL` set to your public tunnel URL. Create credentials for WhatsApp (send and trigger), OpenAI, Supabase, Postgres and Gmail.
 4. **Import** `workflows/insurance-whatsapp-agent.json` and `workflows/update-insurance-kb.json`. Re-select each credential, set your Phone Number ID in the WhatsApp send nodes, set the callback email address in `Request Agent Callback`, and pick your Drive folder.
 5. Publish the workflow and message the test number.
 
@@ -115,7 +117,7 @@ The exported workflows have credential IDs, webhook IDs, my email and my Phone N
 - Free Supabase projects pause after a week of inactivity.
 - The WhatsApp test number only messages numbers added to the allowed list.
 - Callback emails go to one inbox. There is no CRM or ticket creation yet.
-- Gemini can return 503 under load. The workflow retries, then falls back to a typed reply.
+- Voice transcription started on Google Gemini. Free-tier rate limits (429) and overload errors (503) made voice notes unreliable, so I switched to OpenAI transcription. The node still retries twice, then falls back to a typed reply.
 - The knowledge base is demonstration content. Figures such as penalties and coverage limits should be verified before any real use.
 
 ## What I would improve next
