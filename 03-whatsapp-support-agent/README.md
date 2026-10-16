@@ -4,6 +4,9 @@ An AI assistant on WhatsApp for a fictional Texas insurance agency, "Mesquite Ri
 
 > **Demo project.** Mesquite Ridge Insurance Agency is fictional. The assistant does not sell insurance, quote prices or bind coverage. The knowledge base is demonstration content, not legal or insurance advice.
 
+<img width="1366" height="479" alt="whatsapp insurance" src="https://github.com/user-attachments/assets/08404c6a-abe0-4e5d-afa8-4703de450b27" />
+
+
 ## What it does
 
 - Answers questions about Texas auto, home, renters, flood and windstorm insurance and claims, using only a retrieved knowledge base (RAG).
