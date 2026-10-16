@@ -1,0 +1,596 @@
+{
+  "name": "Insurance WhatsApp Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message_text }}",
+        "options": {
+          "systemMessage": "# Role\nYou are Riley, a virtual assistant for Mesquite Ridge Insurance Agency, an independent insurance agency in Texas. You are an AI, not a licensed agent. Be friendly, clear and concise. Customers may write in English or Spanish. Reply in their language. Do not sign your messages.\n\n# How to answer\nAlways use the texas_insurance_kb tool to answer questions about coverage, Texas rules, claims and the agency. Answer only from what the tool returns. If the tool does not contain the answer, say you are not sure and offer to connect the customer with a licensed agent. Never guess.\n\n# Guardrails\n- Never give a price or premium estimate, and never say a specific policy or claim will be covered or approved.\n- Never bind, change or cancel coverage.\n- Do not give legal advice. For legal disputes, suggest consulting an attorney.\n- Do not ask for or accept Social Security numbers, driver's license numbers, or payment card or bank details. If a customer shares them, tell them not to share these here and that a licensed agent will collect them securely.\n- If anyone is in danger, tell them to call 911.\n- For urgent claims, tell them to call their insurance carrier's claims line.\n\n# Quotes and callbacks\nWhen a customer wants a quote or wants to speak to a licensed agent:\n1. Collect: name (a first name is enough), phone or email, type of insurance, ZIP code, and best time to call. Ask only for what is missing.\n2. Once you have all five details, read them back in one short line and ask \"Shall I send this to an agent?\"\n3. Only after the customer clearly agrees, use the Request Agent Callback tool to send the details.\n4. Then tell them a licensed agent will contact them, usually within one business day.\nNever say a request was sent unless the tool ran successfully. Never use the tool unless the customer has agreed to be contacted for this specific request.\n\n# WhatsApp style\n- Keep replies under 60 words, in 2 to 4 short sentences. Answer first, then offer one next step.\n- Plain text only. No bold, no headings, no markdown.\n- Never use dashes as punctuation. Use a period or a new sentence instead.\n- Never mention your tools, your knowledge base, or phrases like \"from our guidance\".\n- Ask at most one question per message."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -880,
+        -496
+      ],
+      "id": "2f5d4ef5-6691-48df-bfdb-eb08ac41905f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "reasoningEffort": "low"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1056,
+        -192
+      ],
+      "id": "a0a3b92b-d2b2-4c0d-8838-ea513dd72365",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $(\"WhatsApp Trigger\").first().json.messages[0].from }}",
+        "tableName": "insurance_chat_histories",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        -896,
+        -224
+      ],
+      "id": "64bf3f2a-0140-420c-825c-4e89a74dd705",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the Mesquite Ridge knowledge base for Texas auto, home, renters, flood and windstorm insurance, claims rules, and agency information. Use it for every customer question.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -640,
+        -224
+      ],
+      "id": "0765b172-6d26-4483-8805-bc892b1faccf",
+      "name": "texas_insurance_kb",
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Supabase insurance-agent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -464,
+        -112
+      ],
+      "id": "28070bc3-e07f-49b9-b033-22364cbae227",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "your-email@example.com",
+        "subject": "={{ \"Callback Request: \" + $fromAI('customer_name', 'The customer full name', 'string') + \" (\" + $fromAI('insurance_type', 'The type of insurance the customer asked about', 'string') + \")\" }}",
+        "message": "={{ \"Customer Name: \" + $fromAI('customer_name', 'The customer full name', 'string') + \"<br><br>Phone or Email: \" + $fromAI('contact_info', 'The customer phone number or email address', 'string') + \"<br><br>Insurance Type: \" + $fromAI('insurance_type', 'The type of insurance the customer asked about', 'string') + \"<br>ZIP Code: \" + $fromAI('zip_code', 'The customer ZIP code', 'string') + \"<br>Best Time to Call: \" + $fromAI('best_time', 'The best time to call the customer', 'string') + \"<br><br>Notes: \" + $fromAI('notes', 'Short summary of what the customer asked, or the text None provided', 'string') + \"<br><br>Requested action: A licensed agent should contact this customer to discuss coverage options and prepare a quote.\" }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        -752,
+        -208
+      ],
+      "id": "7f8ed6e8-1818-4b97-bd04-30b3a382b0d9",
+      "name": "Request Agent Callback",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -544,
+        -528
+      ],
+      "id": "49999bf3-ee5d-4430-a144-5ba1244e76a4",
+      "name": "WhatsApp Trigger",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.messages[0].type }}",
+                    "rightValue": "audio",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "2e42e7ef-5102-4338-9304-1323ff81779c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "890e1c59-3676-4617-b27f-2c7632f72f21",
+                    "leftValue": "={{ $json.messages[0].type }}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -384,
+        -528
+      ],
+      "id": "e046080b-579c-4e45-9c6a-3bb9d634b3e8",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d0d4ce4a-2abc-4f6c-8d6b-885cd0bea4be",
+              "name": "message_text",
+              "value": "={{ $json.messages[0].text.body }}",
+              "type": "string"
+            },
+            {
+              "id": "8aebc67f-2476-4bb0-918c-062dc15931c0",
+              "name": "from",
+              "value": "={{ $json.messages[0].from }}",
+              "type": "string"
+            },
+            {
+              "id": "ede27841-6a3a-42a8-9102-380ccac83259",
+              "name": "sessionId",
+              "value": "={{ $json.messages[0].from }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        32,
+        -176
+      ],
+      "id": "4dd07db5-34ad-42d9-8062-ebb648a27066",
+      "name": "Get User's Message"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "=YOUR_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "={{ $(\"WhatsApp Trigger\").first().json.messages[0].from }}",
+        "textBody": "={{ $json.output.replace(/\\s*\\u2014\\s*/g, ', ') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -320,
+        -304
+      ],
+      "id": "de9315ba-a680-4366-a6f7-de83b690e061",
+      "name": "Reply To User",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $json.messages[0].audio.id }}"
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -192,
+        -544
+      ],
+      "id": "841821c0-0bc8-4b5e-a280-69414e1a1710",
+      "name": "Get Audio URL",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -16,
+        -544
+      ],
+      "id": "0672eaf2-28f7-4560-8701-60af69e19b13",
+      "name": "Download Audio",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.8-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.8-flash"
+        },
+        "text": "Transcribe this voice message exactly as spoken. Return only the transcript, nothing else.",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        -544
+      ],
+      "id": "082c6ca0-237a-4692-908d-3f3c81271e63",
+      "name": "Transcribe Audio",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Gemini account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "728153ad-267f-445a-8bbb-cbea95f7e001",
+              "name": "message_text",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "6ba1129c-099f-4d75-b48d-0a2db1104584",
+              "name": "from",
+              "value": "={{ $(\"WhatsApp Trigger\").first().json.messages[0].from }}",
+              "type": "string"
+            },
+            {
+              "id": "bc781923-b413-4208-a240-8b0ade1cf968",
+              "name": "sessionId",
+              "value": "={{ $(\"WhatsApp Trigger\").first().json.messages[0].from }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        368,
+        -544
+      ],
+      "id": "9ff403c6-0e68-48e4-ae23-15ca11908c7c",
+      "name": "Get Audio Message"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "=YOUR_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "={{ $(\"WhatsApp Trigger\").first().json.messages[0].from }}",
+        "textBody": "Sorry, I couldn't process that voice note. Could you type your message instead?",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        -400
+      ],
+      "id": "c88ab056-9c5a-48c4-8c5e-e60eb1a7c7c4",
+      "name": "Voice Fallback Reply",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "WhatsApp account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "texas_insurance_kb": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "texas_insurance_kb",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Agent Callback": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Audio URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get User's Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User's Message": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Reply To User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Audio URL": {
+      "main": [
+        [
+          {
+            "node": "Download Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Audio": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Audio": {
+      "main": [
+        [
+          {
+            "node": "Get Audio Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Voice Fallback Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Audio Message": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
