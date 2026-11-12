@@ -13,6 +13,8 @@ Demo: https://www.loom.com/share/8ba0ae4788034b47942a7fb48f2239ff
 5. **Notion** creates a row with the subject, sender, category, priority, summary, status, received time, and a link to the original email.
 6. **If** checks whether a draft is needed. If so, **Gmail** saves it to Drafts.
 7. **Gmail Mark as read** clears the email from the queue so it isn't processed again.
+<img width="1366" height="689" alt="the workflow" src="https://github.com/user-attachments/assets/052b503d-7a61-4c80-90e3-e4ca0bb939c5" />
+
 
 ## Tested so far
 
