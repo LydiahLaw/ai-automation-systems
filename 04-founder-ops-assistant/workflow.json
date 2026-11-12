@@ -1,0 +1,419 @@
+{
+  "name": "01 Inbox Triage",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "custom",
+              "cronExpression": "*/15 * * * *"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ],
+          "q": "is:unread",
+          "readStatus": "unread"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1168,
+        -144
+      ],
+      "id": "0f6e197c-ccc1-493c-93fa-1299e4e1276b",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are an inbox assistant for Jordan Wells, founder of Brightpath Studio, a small design agency.\n\nRead the email below and return only a JSON object with these keys:\n- \"category\": one of \"Lead\", \"Client\", \"Invoice\", \"Scheduling\", \"Other\"\n- \"priority\": one of \"High\", \"Medium\", \"Low\"\n- \"summary\": one sentence describing what the email needs\n- \"draft_reply\": a short, polite reply draft (3 to 5 sentences) signed \"Jordan\". If the email is a Scheduling request, include the line \"You can book a time here: [CALENDLY_LINK]\". If the email is marketing, spam, or a newsletter, set draft_reply to an empty string.\n\nRules:\n- Use only the exact category and priority values listed above.\n- Do not invent prices, dates, or commitments.\n- Return JSON only, with no extra text.\n- Never use em dashes (—) or en dashes (–). Use commas, periods, or \"and\" instead.\n- Write draft_reply as short paragraphs of 1 to 2 sentences each, separated by a blank line. Never write one long block.\n\nEmail snippet:\n{{ ($('Edit Fields').item.json.text || $('Edit Fields').item.json.html || '').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 3000) }}\n\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -624,
+        256
+      ],
+      "id": "04d11523-04ef-4b81-86cd-9323ce624204",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4c87b091-bbdb-4e7e-99c5-c3573fe7a03a",
+              "name": "from",
+              "value": "={{ $json.headers.from.replace(/^From:\\s*/i, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "3c908f40-7f48-4ce3-bc8b-e460db5c371f",
+              "name": "subject",
+              "value": "={{ $json.headers.subject.replace(/\\s+/g, ' ').trim().replace(/^Subject:\\s*/i, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "2c9a46c3-4097-4413-a931-c5297568547b",
+              "name": "received",
+              "value": "={{ new Date($json.headers.date.replace(/^Date:\\s*/i, '')).toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -864,
+        -144
+      ],
+      "id": "15f35d96-0fa1-4c2e-8dea-099fbb651fef",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_NOTION_DATABASE_ID",
+          "mode": "id"
+        },
+        "title": "={{ $('Edit Fields').item.json.subject }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Subject|title",
+              "title": "={{ $('Edit Fields').item.json.subject }}"
+            },
+            {
+              "key": "From|rich_text",
+              "textContent": "={{ $('Edit Fields').item.json.from }}"
+            },
+            {
+              "key": "Category|select",
+              "selectValue": "={{ JSON.parse($('Message a model').item.json.output[0].content[0].text).category }}"
+            },
+            {
+              "key": "Priority|select",
+              "selectValue": "={{ JSON.parse($('Message a model').item.json.output[0].content[0].text).priority }}"
+            },
+            {
+              "key": "Summary|rich_text",
+              "textContent": "={{ JSON.parse($('Message a model').item.json.output[0].content[0].text).summary }}"
+            },
+            {
+              "key": "Status|select",
+              "selectValue": "New"
+            },
+            {
+              "key": "Received|date",
+              "date": "={{ $('Edit Fields').item.json.received }}"
+            },
+            {
+              "key": "Email link|url",
+              "urlValue": "=https://mail.google.com/mail/u/0/#inbox/{{ $('Edit Fields').item.json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        -224,
+        256
+      ],
+      "id": "47397b70-99f4-4a57-bbdd-ab091572ba95",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion Founder Inbox"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_NOTION_DATABASE_ID",
+          "mode": "id"
+        },
+        "limit": 1,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Email link|url",
+              "condition": "contains",
+              "richTextValue": "={{ $('Edit Fields').item.json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        -544,
+        -144
+      ],
+      "id": "d8ba53ea-52a0-4795-ba7a-167da05f2147",
+      "name": "Get many database pages",
+      "alwaysOutputData": true,
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion Founder Inbox"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b7758136-e7ac-43a5-8c6b-dc155dcc5713",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -304,
+        -144
+      ],
+      "id": "f00c47ec-4e50-4f2f-9e1f-d7d5f6fbb0a1",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $('Edit Fields').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        16,
+        -128
+      ],
+      "id": "2e18aef4-4ae3-4e5f-b492-fdd89809ac0f",
+      "name": "Mark a message as read",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2cb26a2a-73d3-4e3a-9544-b2c26e9c8814",
+              "leftValue": "={{ JSON.parse($('Message a model').item.json.output[0].content[0].text).draft_reply }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        112,
+        256
+      ],
+      "id": "89a7af34-3e2b-4eec-acd2-fc71933522a7",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=Re: {{ $('Edit Fields').item.json.subject }}",
+        "message": "={{ JSON.parse($('Message a model').item.json.output[0].content[0].text).draft_reply }}",
+        "options": {
+          "sendTo": "={{ $('Edit Fields').item.json.from.match(/<(.+?)>/)?.[1] || $('Edit Fields').item.json.from }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        160
+      ],
+      "id": "a1d633e9-a4f8-44b9-9dce-180ba5c71f53",
+      "name": "Create a draft",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Get many database pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a database page": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many database pages": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark a message as read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Mark a message as read",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
